@@ -152,5 +152,51 @@
 
     updateList();
   </script>
+  <input type="text" id="foodName" placeholder="Food name">
+<input type="number" id="calories" placeholder="Calories">
+<button onclick="addFood()">Add Food</button>
+
+<h3>Total Calories: <span id="totalCalories">0</span></h3>
+<h3>Remaining Calories: <span id="remainingCalories">2000</span></h3>
+
+<h2>Food List</h2>
+<div id="foodList"></div>
+
+  <script>
+  let totalCalories = 0;
+
+  function addFood() {
+    const foodName = document.getElementById('foodName').value;
+    const calories = parseInt(document.getElementById('calories').value);
+
+    if (!foodName || isNaN(calories)) return;
+
+    totalCalories += calories;
+    updateCalories();
+
+    const foodList = document.getElementById('foodList');
+    const item = document.createElement('div');
+    item.className = 'food-item';
+    item.innerHTML = `
+      <span>${foodName} - ${calories} cal</span>
+      <button onclick="deleteFood(this, ${calories})">Delete</button>
+    `;
+    foodList.appendChild(item);
+
+    document.getElementById('foodName').value = '';
+    document.getElementById('calories').value = '';
+  }
+
+  function deleteFood(button, calories) {
+    totalCalories -= calories;
+    updateCalories();
+    button.parentElement.remove();
+  }
+
+  function updateCalories() {
+    document.getElementById('totalCalories').textContent = totalCalories;
+    document.getElementById('remainingCalories').textContent = 2000 - totalCalories;
+  }
+</script>
 </body>
 </html>
