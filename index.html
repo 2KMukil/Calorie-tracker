@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Calorie Tracker</title>
+  <title>Calories Tracker</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -11,7 +11,7 @@
       padding: 0;
       background-color: #121212;
       color: #f0f0f0;
-      transition: background-color 0.3s, color 0.3s;
+      transition: background-color 0.5s, color 0.5s;
     }
     body.light-theme {
       background-color: #ffffff;
@@ -76,9 +76,14 @@
     }
 
     button {
-      background-color: #03dac6;
+      background-color: #38a41f;
       color: #000;
       cursor: pointer;
+    }
+
+    .refresh-btn {
+      background-color: #c2bf0d;
+      color: rgb(24, 16, 16);
     }
 
     ul {
@@ -122,7 +127,7 @@
 </head>
 <body>
   <div class="top-bar">
-    <h1>Calorie Tracker</h1>
+    <h1>Calories Tracker</h1>
     <span class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">🌓</span>
   </div>
 
@@ -138,6 +143,8 @@
         Total Calories: <span id="totalCalories">0</span><br/>
         Remaining Calories: <span id="remainingCalories">0</span>
       </div>
+
+      <button class="refresh-btn" onclick="startNewDay()">Start New Day</button>
     </div>
 
     <!-- Right Section: Food List -->
@@ -225,6 +232,12 @@
 
     function removeFood(index) {
       foods.splice(index, 1);
+      updateList();
+    }
+
+    function startNewDay() {
+      foods = [];
+      localStorage.setItem('foods', JSON.stringify(foods));
       updateList();
     }
 
