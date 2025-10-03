@@ -1,89 +1,133 @@
 
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Calorie Tracker</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; background: #f9f9f9; }
-    h1 { text-align: center; }
-    input, button, select { width: 100%; padding: 10px; margin: 5px 0; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 10px; border-bottom: 1px solid #ccc; }
-    .total { font-weight: bold; margin-top: 20px; text-align: center; }
-    .entry { background: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
-    .entry span { display: block; }
-    .actions button { margin-right: 5px; }
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Calorie Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    input, button, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li.card {
+      background: #f9f9f9;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-details {
+      flex-grow: 1;
+    }
+    .card-actions button {
+      margin-left: 10px;
+      background-color: #e74c3c;
+    }
+    .card-actions button.edit {
+      background-color: #3498db;
+    }
+    .total {
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 20px;
+      text-align: center;
+      color: #333;
+    }
+    .export-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    .export-buttons button {
+      width: 48%;
+      background-color: #6c5ce7;
+    }
+    canvas {
+      margin-top: 30px;
+    }
   </style>
 </head>
-<body>
-  <h1>Calorie Tracker</h1>
-  <input type="text" id="foodInput" placeholder="Enter food (e.g., 1 banana)" />
-  <button onclick="addFood()">Add Food</button>
+<body><div id="sidebar" style="width: 200px; float: left; padding: 10px; background: #f0f0f0;"><label for="dateFilter">Filter by Date:</label><select id="dateFilter" onchange="filterByDate()"></select></div><div id="mainContent" style="margin-left: 220px; padding: 10px;"><div class="container">
+<h1>Calorie Tracker</h1>
+<input id="foodInput" placeholder="Enter food (e.g., 1 banana)" type="text"/>
+<button onclick="addFood()">Add Food</button>
 
-  <label for="dateFilter">Filter by Date:</label>
-  <select id="dateFilter" onchange="filterByDate()">
-    <option value="">All Dates</option>
-  </select>
-
-  <div id="foodList"></div>
-  <div class="total">Total Calories: <span id="totalCalories">0</span></div>
-
-  <script>
+<ul id="foodList"></ul>
+<div class="total">Total Calories: <span id="totalCalories">0</span></div>
+<div class="export-buttons">
+<button onclick="exportCSV()">Export to CSV</button>
+<button onclick="exportPDF()">Export to PDF</button>
+</div>
+<canvas height="200" id="calorieChart" width="400"></canvas>
+</div><script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script><script>
     const APP_ID = '6427e520';
     const API_KEY = 'fe520c03e0905bcefb1dcbe85d6132fb';
     let foods = JSON.parse(localStorage.getItem('foods')) || [];
 
     function getToday() {
-      const d = new Date();
-      return d.toISOString().split('T')[0];
+      return new Date().toISOString().split('T')[0];
     }
 
     function updateDateFilter() {
       const dates = [...new Set(foods.map(f => f.date))];
-      const filter = document.getElementById('dateFilter');
-      filter.innerHTML = '<option value="">All Dates</option>';
+      const select = document.getElementById('dateFilter');
+      select.innerHTML = '';
       dates.forEach(date => {
-        const opt = document.createElement('option');
-        opt.value = date;
-        opt.textContent = date;
-        filter.appendChild(opt);
+        const option = document.createElement('option');
+        option.value = date;
+        option.textContent = date;
+        select.appendChild(option);
       });
+      select.value = getToday();
     }
 
-    function filterByDate() {
-      const selectedDate = document.getElementById('dateFilter').value;
-      updateList(selectedDate);
-    }
-
-    function updateList(filterDate = '') {
-      const list = document.getElementById('foodList');
-      const total = document.getElementById('totalCalories');
-      list.innerHTML = '';
-      let totalCals = 0;
-
-      foods.filter(f => !filterDate || f.date === filterDate).forEach((item, index) => {
-        totalCals += item.calories;
-        const div = document.createElement('div');
-        div.className = 'entry';
-        div.innerHTML = `
-          <span><strong>${item.name}</strong> (${item.serving_qty} ${item.serving_unit})</span>
-          <span>Calories: ${item.calories.toFixed(2)} | Protein: ${item.protein.toFixed(2)}g | Fat: ${item.fat.toFixed(2)}g | Carbs: ${item.carbs.toFixed(2)}g</span>
-          <div class="actions">
-            <button onclick="editFood(${index})">Edit</button>
-            <button onclick="deleteFood(${index})">Delete</button>
-          </div>
-        `;
-        list.appendChild(div);
-      });
-
-      total.textContent = totalCals.toFixed(2);
-      localStorage.setItem('foods', JSON.stringify(foods));
-      updateDateFilter();
-    }
-
-    async function fetchNutrition(query) {
+    async function addFood() {
+      const query = document.getElementById('foodInput').value;
+      if (!query) return;
       const response = await fetch('https://trackapi.nutritionix.com/v2/natural/nutrients', {
         method: 'POST',
         headers: {
@@ -96,56 +140,162 @@
       });
       const data = await response.json();
       if (data.foods && data.foods.length > 0) {
-        const f = data.foods[0];
-        return {
-          name: f.food_name,
-          calories: f.nf_calories,
-          protein: f.nf_protein,
-          fat: f.nf_total_fat,
-          carbs: f.nf_total_carbohydrate,
-          serving_qty: f.serving_qty,
-          serving_unit: f.serving_unit,
-          date: getToday()
-        };
+        const item = data.foods[0];
+        foods.push({
+          id: Date.now(),
+          date: getToday(),
+          name: item.food_name,
+          quantity: item.serving_qty,
+          unit: item.serving_unit,
+          calories: item.nf_calories,
+          protein: item.nf_protein,
+          fat: item.nf_total_fat,
+          carbs: item.nf_total_carbohydrate
+        });
+        localStorage.setItem('foods', JSON.stringify(foods));
+        document.getElementById('foodInput').value = '';
+        updateDateFilter();
+        updateList();
+        updateChart();
       } else {
-        throw new Error('Food not found');
+        alert('Food not found!');
       }
     }
 
-    async function addFood() {
-      const input = document.getElementById('foodInput');
-      const query = input.value.trim();
-      if (!query) return;
-      try {
-        const foodData = await fetchNutrition(query);
-        foods.push(foodData);
-        updateList(document.getElementById('dateFilter').value);
-        input.value = '';
-      } catch (err) {
-        alert(err.message);
-      }
+    function updateList() {
+      const list = document.getElementById('foodList');
+      const total = document.getElementById('totalCalories');
+      const selectedDate = document.getElementById('dateFilter').value;
+      list.innerHTML = '';
+      let totalCals = 0;
+      foods.filter(f => f.date === selectedDate).forEach(item => {
+        totalCals += item.calories;
+        const li = document.createElement('li');
+        li.className = 'card';
+        const details = document.createElement('div');
+        details.className = 'card-details';
+        details.innerHTML = `<strong>${item.name}</strong> (${item.quantity} ${item.unit})<br>
+          Calories: ${item.calories.toFixed(2)} | Protein: ${item.protein}g | Fat: ${item.fat}g | Carbs: ${item.carbs}g`;
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.className = 'edit';
+        editBtn.onclick = () => editFood(item.id);
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => deleteFood(item.id);
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        li.appendChild(details);
+        li.appendChild(actions);
+        list.appendChild(li);
+      });
+      total.textContent = totalCals.toFixed(2);
     }
 
-    async function editFood(index) {
-      const newQuery = prompt('Enter new food description:', foods[index].name);
+    function editFood(id) {
+      const item = foods.find(f => f.id === id);
+      const newQuery = prompt('Edit food entry:', `${item.quantity} ${item.unit} ${item.name}`);
       if (!newQuery) return;
-      try {
-        const updatedFood = await fetchNutrition(newQuery);
-        foods[index] = updatedFood;
-        updateList(document.getElementById('dateFilter').value);
-      } catch (err) {
-        alert(err.message);
-      }
+      fetch('https://trackapi.nutritionix.com/v2/natural/nutrients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-app-id': APP_ID,
+          'x-app-key': API_KEY,
+          'x-remote-user-id': '0'
+        },
+        body: JSON.stringify({ query: newQuery })
+      }).then(res => res.json()).then(data => {
+        if (data.foods && data.foods.length > 0) {
+          const updated = data.foods[0];
+          item.name = updated.food_name;
+          item.quantity = updated.serving_qty;
+          item.unit = updated.serving_unit;
+          item.calories = updated.nf_calories;
+          item.protein = updated.nf_protein;
+          item.fat = updated.nf_total_fat;
+          item.carbs = updated.nf_total_carbohydrate;
+          localStorage.setItem('foods', JSON.stringify(foods));
+          updateList();
+          updateChart();
+        } else {
+          alert('Food not found!');
+        }
+      });
     }
 
-    function deleteFood(index) {
-      if (confirm('Delete this entry?')) {
-        foods.splice(index, 1);
-        updateList(document.getElementById('dateFilter').value);
-      }
+    function deleteFood(id) {
+      foods = foods.filter(f => f.id !== id);
+      localStorage.setItem('foods', JSON.stringify(foods));
+      updateList();
+      updateChart();
     }
 
+    function filterByDate() {
+      updateList();
+      updateChart();
+    }
+
+    function exportCSV() {
+      const selectedDate = document.getElementById('dateFilter').value;
+      const rows = [['Date', 'Food', 'Quantity', 'Unit', 'Calories', 'Protein', 'Fat', 'Carbs']];
+      foods.filter(f => f.date === selectedDate).forEach(f => {
+        rows.push([f.date, f.name, f.quantity, f.unit, f.calories, f.protein, f.fat, f.carbs]);
+      });
+      const csvContent = rows.map(e => e.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'calorie_tracker_export.csv';
+      link.click();
+    }
+
+    function exportPDF() {
+      const selectedDate = document.getElementById('dateFilter').value;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(14);
+      doc.text(`Calorie Tracker - ${selectedDate}`, 10, 10);
+      let y = 20;
+      foods.filter(f => f.date === selectedDate).forEach(f => {
+        doc.text(`${f.name} (${f.quantity} ${f.unit})`, 10, y);
+        doc.text(`Calories: ${f.calories.toFixed(2)} | Protein: ${f.protein}g | Fat: ${f.fat}g | Carbs: ${f.carbs}g`, 10, y + 6);
+        y += 16;
+      });
+      doc.save('calorie_tracker_export.pdf');
+    }
+
+    function updateChart() {
+      const ctx = document.getElementById('calorieChart').getContext('2d');
+      const dates = [...new Set(foods.map(f => f.date))].sort();
+      const totals = dates.map(date => {
+        return foods.filter(f => f.date === date).reduce((sum, f) => sum + f.calories, 0);
+      });
+      if (window.calorieChart) window.calorieChart.destroy();
+      window.calorieChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dates,
+          datasets: [{
+            label: 'Calories per Day',
+            data: totals,
+            backgroundColor: '#4CAF50'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Daily Calorie Intake' }
+          }
+        }
+      });
+    }
+
+    updateDateFilter();
     updateList();
-  </script>
-</body>
+    updateChart();
+  </script></div></body>
 </html>
