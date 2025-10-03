@@ -58,8 +58,9 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-app-id': APP_ID,
-          'x-app-key': API_KEY
+          'x-app-id': 'APP_ID',
+          'x-app-key': 'API_KEY',
+          'x-remote-user-id': '0'
         },
         body: JSON.stringify({ query: food })
       });
