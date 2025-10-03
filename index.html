@@ -67,16 +67,7 @@
   <div class="container">
     <div class="top-bar">
       <h1>Calorie Tracker</h1>
-      
-    </div>
-    <input type="number" id="goalInput" placeholder="Set daily calorie goal" />
-    <input type="text" id="foodInput" placeholder="Enter food name" />
-    <button onclick="addFood()">Add Food</button>
-    <ul id="foodList"></ul>
-    <div class="summary">
-      Total Calories: <span id="totalCalories">0</span><br/>
-      Remaining Calories: <span id="remainingCalories">0</span>
-    </div>
+   
   </div>
 
   <script>
@@ -149,25 +140,6 @@
     function toggleTheme() {
       document.body.classList.toggle('light-theme');
     }
-
-    const foodList = document.getElementById('foodList');
-    const item = document.createElement('div');
-    item.className = 'food-item';
-    item.innerHTML = `
-      <span>${foodName} - ${calories} cal</span>
-      <button onclick="deleteFood(this, ${calories})">Delete</button>
-    `;
-    foodList.appendChild(item);
-
-    document.getElementById('foodName').value = '';
-    document.getElementById('calories').value = '';
-  }
-
-  function deleteFood(button, calories) {
-    totalCalories -= calories;
-    updateCalories();
-    button.parentElement.remove();
-  }
 
 </body>
 </html>
